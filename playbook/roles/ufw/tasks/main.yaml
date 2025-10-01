@@ -1,0 +1,12 @@
+---
+- name: Open ports for running playbook
+  ufw:
+    rule: allow
+    port: '{{ item }}'
+    proto: tcp
+  loop: "{{ ports }}"
+
+- name: Deny all exclude open ports and enable ufw
+  ufw:
+    rule: deny
+    state: enabled

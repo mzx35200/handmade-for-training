@@ -1,0 +1,97 @@
+---
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+    lock_timeout: 120
+
+- name: Default config HTTP
+  template:
+    src: default-http.j2
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+
+- name: If generate certiifcate call OpenSSL
+  include_role:
+    name: certificates
+  when: item.key == ansible_hostname and item.value.https and item.value.generatecert
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+
+- name: Create ssl directory
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: item.key == ansible_hostname and item.value.https
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+#  no_log: true
+
+- name: Copy cert file
+  copy:
+    src: "{{ item.value.certfile }}"
+    dest: /etc/nginx/ssl/{{ item.value.certfile }}
+    owner: root
+    group: root
+    mode: '0644'
+  when: item.key == ansible_hostname and item.value.https and not item.value.generatecert
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+#  no_log: true
+
+- name: Copy key file
+  copy:
+    src: "{{ item.value.keyfile }}"
+    dest: /etc/nginx/ssl/{{ item.value.keyfile }}
+    owner: root
+    group: root
+    mode: '0644'
+  when: item.key == ansible_hostname and item.value.https and not item.value.generatecert
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+#  no_log: true
+
+- name: Copy Generate cert file
+  copy:
+    src: "/tmp/{{ item.key }}.crt"
+    dest: "/etc/nginx/ssl/{{ item.key }}.crt"
+    owner: root
+    group: root
+    mode: '0644'
+  when: item.key == ansible_hostname and item.value.https and item.value.generatecert
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+#  no_log: true
+
+- name: Copy Generate key file
+  copy:
+    src: "/tmp/{{ item.key }}.key"
+    dest: "/etc/nginx/ssl/{{ item.key }}.key"
+    owner: root
+    group: root
+    mode: '0644'
+  when: item.key == ansible_hostname and item.value.https and item.value.generatecert
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+#  no_log: true
+
+- name: Default config HTTPS
+  template:
+    src: default-https.j2
+    dest: /etc/nginx/sites-available/default-https
+    owner: root
+    group: root
+    mode: '0644'
+  when: item.key == ansible_hostname and item.value.https
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+#  no_log: true
+
+- name: Enable https site in nginx
+  file:
+    src: /etc/nginx/sites-available/default-https
+    dest: /etc/nginx/sites-enabled/default-https
+    state: link
+  notify: Restart nginx
+  when: item.key == ansible_hostname and item.value.https
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+#  no_log: true
