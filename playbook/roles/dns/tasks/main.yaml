@@ -1,0 +1,23 @@
+---
+- name: Add DNS Records
+  lineinfile:
+    path: /etc/bind/master-zones/infra.test
+    insertafter: EOF
+    line: '{{ item.value.vmname }}                           IN              A               {{ item.value.ip }}'
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+  delegate_to: 192.168.100.2
+
+- name: Add PTR Records
+  lineinfile:
+    path: /etc/bind/db.100
+    insertafter: EOF
+    line: '{{ item.value.ip | ansible.utils.ipaddr("revdns") }}                           IN              PTR               {{ item.value.vmname }}.{{ item.value.domain }}.'
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+  delegate_to: 192.168.100.2
+
+- name: Restart Bind
+  service:
+    name: bind9
+    state: restarted
+  delegate_to: 192.168.100.2
+  run_once: true
