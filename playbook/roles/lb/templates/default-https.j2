@@ -1,0 +1,30 @@
+{% for k, value in upstreams|items %}{% if value.https %}
+upstream {{ k }} {
+        {% for s in value.servers %}server {{ s }};
+        {% endfor %}
+}
+
+server {
+	listen 443 ssl;
+        {% if value.ipv6 %}listen [::]:443 ssl;
+        {% endif %}
+
+	server_name {{ value.url }};
+
+        {% if value.generatecert %}ssl_certificate /etc/nginx/ssl/{{ k }}.crt;
+        ssl_certificate_key /etc/nginx/ssl/{{ k }}.key;
+{% else %}
+        ssl_certificate /etc/nginx/ssl/{{ value.certfile }};
+        ssl_certificate_key /etc/nginx/ssl/{{ value.keyfile }};
+{% endif %}ssl_session_timeout 5m;
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_ciphers ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv3:+EXP;
+        ssl_prefer_server_ciphers on;
+
+	location / {
+		proxy_pass http://{{ k }};
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	}
+}{% endif %}{% endfor %}
