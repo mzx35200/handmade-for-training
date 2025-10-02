@@ -1,0 +1,28 @@
+{% for k, value in upstreams|items %}{% if not value.https %}
+upstream {{ k }} {
+	{% for s in value.servers %}server {{ s }};
+{% endfor %}}
+
+server {
+	listen 80;
+        {% if value.ipv6 %}listen [::]:80;
+        {% endif %}
+
+	server_name {{ value.url }};
+
+	location / {
+		proxy_pass http://{{ k }};
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	}
+}{% endif %}{% endfor %}
+
+server {
+        listen 80;
+        server_name _;
+
+        location / {
+            return 404;
+        }
+}

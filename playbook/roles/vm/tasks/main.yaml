@@ -1,0 +1,65 @@
+- name: Create new VM using Cloud-Init with an ssh key
+  proxmox_kvm:
+    node: pve
+    api_user: root@pam
+    api_password: secret
+    api_host: 192.168.100.211
+    name: "{{ item.value.vmname }}"
+    cores: "{{ item.value.cores }}"
+    memory: "{{ item.value.memory }}"
+    net:
+      net0: 'virtio,bridge=vmbr0'
+    scsihw: virtio-scsi-pci
+    scsi:
+      scsi0: 'local-lvm:0,import-from=/root/noble-server-cloudimg-amd64.img'
+    ide:
+      ide2: 'local-lvm:cloudinit'
+    serial:
+      serial0: 'socket'
+    vga: serial0
+    citype: nocloud
+    ciuser: "{{ item.value.ciuser }}"
+    sshkeys: "{{ item.value.sshkeys }}"
+    searchdomains: "infra.test"
+    nameservers:
+      - '192.168.100.2'
+    ipconfig:
+      ipconfig0: 'ip={{ item.value.ip }}/{{ item.value.netmask }},gw={{ item.value.gw }}'
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+  delegate_to: localhost
+  run_once: true
+  ignore_errors: true
+  no_log: true
+
+- name: Wait register vm
+  pause:
+    seconds: 60
+
+- name: Start Created VM
+  proxmox_kvm:
+    node: pve
+    api_user: root@pam
+    api_password: secret
+    api_host: 192.168.100.211
+    name: "{{ item.value.vmname }}"
+    state: started
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+  delegate_to: localhost
+  run_once: true
+  no_log: true
+
+- name: Wait 2 min Start VM
+  pause:
+    seconds: 120
+
+- name: Check port 22 to become open and contain "OpenSSH"
+  ansible.builtin.wait_for:
+    port: 22
+    host: '{{ item.value.ip }}'
+    search_regex: OpenSSH
+    delay: 10
+    timeout: 300
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+  delegate_to: localhost
+  run_once: true
+  no_log: true

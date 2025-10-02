@@ -1,0 +1,29 @@
+---
+- name: Generate an OpenSSL private key with the default values (4096 bits, RSA)
+  community.crypto.openssl_privatekey:
+    path: "/tmp/{{ item.key }}.key"
+  when: item.key == ansible_hostname and item.value.generatecert
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+  delegate_to: localhost
+  no_log: true
+
+- name: Generate an OpenSSL Certificate Signing Request
+  community.crypto.openssl_csr:
+    path: "/tmp/{{ item.key }}.csr"
+    privatekey_path: "/tmp/{{ item.key }}.key"
+    common_name: "{{ item.value.vmname }}.{{ item.value.domain }}"
+  when: item.key == ansible_hostname and item.value.generatecert
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+  delegate_to: localhost
+  no_log: true
+
+- name: Generate a Self Signed OpenSSL certificate
+  community.crypto.x509_certificate:
+    path: "/tmp/{{ item.key }}.crt"
+    privatekey_path: "/tmp/{{ item.key }}.key"
+    csr_path: "/tmp/{{ item.key }}.csr"
+    provider: selfsigned
+  when: item.key == ansible_hostname and item.value.generatecert
+  loop: "{{ lookup('dict', servers, wantlist=True) }}"
+  delegate_to: localhost
+  no_log: true
