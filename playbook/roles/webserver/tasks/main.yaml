@@ -14,13 +14,11 @@
     mode: '0644'
   notify: Restart nginx
 
-- name: Generated certificates if needed
+- name: If generate certiifcate call OpenSSL
   include_role:
     name: certificates
   when: item.key == ansible_hostname and item.value.https and item.value.generatecert
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
-  run_once: true
-  no_log: true
 
 - name: Create ssl directory
   file:
@@ -31,8 +29,7 @@
     mode: '0755'
   when: item.key == ansible_hostname and item.value.https
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
-  no_log: true
-  run_once: true
+#  no_log: true
 
 - name: Copy cert file
   copy:
@@ -43,8 +40,7 @@
     mode: '0644'
   when: item.key == ansible_hostname and item.value.https and not item.value.generatecert
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
-  no_log: true
-  run_once: true
+#  no_log: true
 
 - name: Copy key file
   copy:
@@ -55,8 +51,7 @@
     mode: '0644'
   when: item.key == ansible_hostname and item.value.https and not item.value.generatecert
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
-  no_log: true
-  run_once: true
+#  no_log: true
 
 - name: Copy Generate cert file
   copy:
@@ -67,8 +62,7 @@
     mode: '0644'
   when: item.key == ansible_hostname and item.value.https and item.value.generatecert
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
-  no_log: true
-  run_once: true
+#  no_log: true
 
 - name: Copy Generate key file
   copy:
@@ -79,8 +73,7 @@
     mode: '0644'
   when: item.key == ansible_hostname and item.value.https and item.value.generatecert
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
-  no_log: true
-  run_once: true
+#  no_log: true
 
 - name: Default config HTTPS
   template:
@@ -91,8 +84,7 @@
     mode: '0644'
   when: item.key == ansible_hostname and item.value.https
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
-  no_log: true
-  run_once: true
+#  no_log: true
 
 - name: Enable https site in nginx
   file:
@@ -102,5 +94,4 @@
   notify: Restart nginx
   when: item.key == ansible_hostname and item.value.https
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
-  no_log: true
-  run_once: true
+#  no_log: true
