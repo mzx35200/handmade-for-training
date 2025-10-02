@@ -1,0 +1,93 @@
+---
+- name: Install Nginx as LoadBalancer
+  apt:
+    name: nginx
+    state: present
+
+- name: Upload HTTP config
+  template:
+    src: default-http.j2
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+
+- name: Generate Certificate if need
+  include_role:
+    name: certificates
+    tasks_from: custom
+  vars:
+    filename: "{{ item.key }}"
+    cname: "{{ item.value.url }}"
+  when: item.value.https and item.value.generatecert
+  loop: "{{ lookup('dict', upstreams, wantlist=true) }}"
+
+- name: Upload HTTPS config
+  template:
+    src: default-https.j2
+    dest: /etc/nginx/sites-available/default-https
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+
+- name: Create ssl directory
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: item.value.https
+  loop: "{{ lookup('dict', upstreams, wantlist=True) }}"
+#  no_log: true
+
+- name: Copy cert file
+  copy:
+    src: "{{ item.value.certfile }}"
+    dest: /etc/nginx/ssl/{{ item.value.certfile }}
+    owner: root
+    group: root
+    mode: '0644'
+  when: item.value.https and not item.value.generatecert
+  loop: "{{ lookup('dict', upstreams, wantlist=True) }}"
+
+- name: Copy key file
+  copy:
+    src: "{{ item.value.keyfile }}"
+    dest: /etc/nginx/ssl/{{ item.value.keyfile }}
+    owner: root
+    group: root
+    mode: '0644'
+  when: item.value.https and not item.value.generatecert
+  loop: "{{ lookup('dict', upstreams, wantlist=true) }}"
+
+- name: Copy generated cert file
+  copy:
+    src: "/tmp/{{ item.key }}.crt"
+    dest: /etc/nginx/ssl/{{ item.key }}.crt
+    owner: root
+    group: root
+    mode: '0644'
+  when: item.value.https and item.value.generatecert
+  loop: "{{ lookup('dict', upstreams, wantlist=True) }}"
+
+- name: Copy generated key file
+  copy:
+    src: "/tmp/{{ item.key }}.key"
+    dest: /etc/nginx/ssl/{{ item.key }}.key
+    owner: root
+    group: root
+    mode: '0644'
+  when: item.value.https and item.value.generatecert
+  loop: "{{ lookup('dict', upstreams, wantlist=true) }}"
+
+- name: Enable https site in nginx
+  file:
+    src: /etc/nginx/sites-available/default-https
+    dest: /etc/nginx/sites-enabled/default-https
+    state: link
+  notify: Restart nginx
+  when: item.value.https
+  loop: "{{ lookup('dict', upstreams, wantlist=True) }}"

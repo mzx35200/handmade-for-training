@@ -1,8 +1,8 @@
 - name: Create new VM using Cloud-Init with an ssh key
   proxmox_kvm:
     node: pve
-    api_user: root@pam # simple user, not api key
-    api_password: secret
+    api_user: root@pam
+    api_password: qwerty123
     api_host: 192.168.100.211
     name: "{{ item.value.vmname }}"
     cores: "{{ item.value.cores }}"
@@ -11,7 +11,7 @@
       net0: 'virtio,bridge=vmbr0'
     scsihw: virtio-scsi-pci
     scsi:
-      scsi0: 'local-lvm:0,import-from=/root/noble-server-cloudimg-amd64.img' # cloud-init image on proxmox server
+      scsi0: 'local-lvm:0,import-from=/root/noble-server-cloudimg-amd64.img'
     ide:
       ide2: 'local-lvm:cloudinit'
     serial:
@@ -39,7 +39,7 @@
   proxmox_kvm:
     node: pve
     api_user: root@pam
-    api_password: secret
+    api_password: qwerty123
     api_host: 192.168.100.211
     name: "{{ item.value.vmname }}"
     state: started
