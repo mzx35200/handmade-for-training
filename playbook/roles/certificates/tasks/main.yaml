@@ -5,6 +5,7 @@
   when: item.key == ansible_hostname and item.value.generatecert
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
   delegate_to: localhost
+  no_log: true
 
 - name: Generate an OpenSSL Certificate Signing Request
   community.crypto.openssl_csr:
@@ -14,6 +15,7 @@
   when: item.key == ansible_hostname and item.value.generatecert
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
   delegate_to: localhost
+  no_log: true
 
 - name: Generate a Self Signed OpenSSL certificate
   community.crypto.x509_certificate:
@@ -24,3 +26,4 @@
   when: item.key == ansible_hostname and item.value.generatecert
   loop: "{{ lookup('dict', servers, wantlist=True) }}"
   delegate_to: localhost
+  no_log: true

@@ -1,0 +1,31 @@
+---
+create_vm: true
+servers:
+  lb01:
+    vmname: lb01
+    lbapp: nginx
+    domain: infra.test
+    cores: 1
+    memory: 2048
+    ciuser: user
+    ssh-keys: ''
+    ip: 192.168.100.110
+    netmask: 24
+    gw: 192.168.100.1
+upstreams:
+  test:
+    servers: [nginx02.infra.test:80]
+    url: lbtest.infra.test
+    ipv6: false
+    https: true
+    generatecert: true
+    certfile:
+    keyfile:
+  web:
+    servers: [web01.infra.test:80, web05.infra.test:80]
+    url: lbweb.infra.test
+    ipv6: false
+    https: true
+    generatecert: true
+    certfile:
+    keyfile:
